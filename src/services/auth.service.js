@@ -138,3 +138,34 @@ module.exports.getAuthProfileService = async (req, res, next) => {
 		return next(InternalServerError)
 	}
 }
+
+module.exports.logoutService = (req, res, next) => {
+	try {
+		const token =
+			req.cookies.authToken || req.headers['authorization']?.split(' ')[1]
+
+		if (token) {
+			// TODO (Add the token to the blacklist)
+			// jwtBlacklist.add(token)
+		}
+
+		// Clear the auth cookie
+		res.cookie('authToken', '', {
+			httpOnly: true,
+			expires: new Date(0),
+			secure: process.env.NODE_ENV === 'production',
+		})
+
+		return res.status(200).send(
+			customResponse({
+				success: true,
+				error: false,
+				message: 'Successfully logged out 😏 🍀',
+				status: 200,
+				data: null,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}

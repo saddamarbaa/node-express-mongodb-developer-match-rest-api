@@ -55,16 +55,21 @@ const connectDB = async (MONGODB_URI) => {
 	})
 
 	// @event close: Emitted after we disconnected and onClose executed on all of this connections models.
-	process.on('SIGINT', () => {
-		mongoose.connection.close(() => {
+	process.on('SIGINT', async () => {
+		try {
+			await mongoose.connection.close()
+
 			if (process?.env?.NODE_ENV && process.env.NODE_ENV === 'development') {
 				console.log(
 					'MongoDB database connection is disconnected due to app termination...',
 				)
 			}
 
-			process.exit(0) // close database connection
-		})
+			process.exit(0) // Close database connection and exit process
+		} catch (error) {
+			console.error('Error closing the MongoDB connection:', error)
+			process.exit(1) // Exit with failure if there was an error
+		}
 	})
 
 	// mongoose.connect return promise
