@@ -1,4 +1,5 @@
 const express = require('express')
+const cookieParser = require('cookie-parser')
 const morgan = require('morgan')
 const dotenv = require('dotenv-safe')
 
@@ -7,8 +8,8 @@ const { notFoundMiddleware, errorHandlerMiddleware } = require('./middleware')
 
 const app = express()
 
-// Middleware to parse incoming JSON
 app.use(express.json())
+app.use(cookieParser())
 
 // Access Environment variables
 dotenv.config()

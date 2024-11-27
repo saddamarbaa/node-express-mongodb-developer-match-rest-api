@@ -9,6 +9,10 @@ const environmentConfig = {
 	API_URL: process.env.API_URL,
 	PORT: process.env.PORT || 8000,
 	NODE_ENV: process.env.NODE_ENV || 'development',
+	API_VERSION: process.env.API_VERSION,
+  JWT_EXPIRE_TIME: process.env.JWT_EXPIRE_TIME,
+  JWT_TOKEN_SECRET: process.env.JWT_TOKEN_SECRET,
+  JWT_ISSUER: process.env.JWT_ISSUER,
 }
 
-module.exports =  environmentConfig 
+module.exports = environmentConfig
