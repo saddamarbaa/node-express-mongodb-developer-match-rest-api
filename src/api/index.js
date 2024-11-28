@@ -3,7 +3,7 @@ const express = require('express')
 const authRoutes = require('../routes/auth.route')
 const feedRoute = require("../routes/feed.route")
 const profileRoute = require("../routes/profile.route")
-const requestRoute = require('../routes/request.route')
+const requestRoute = require('../routes/connectionRequest.route')
 
 const router = express.Router()
 
