@@ -43,7 +43,6 @@ const connectDB = async (MONGODB_URI) => {
 
 		setTimeout(() => {
 			mongoose.connect(MONGODB_URI, {
-				keepAlive: true,
 				socketTimeoutMS: 3000,
 				connectTimeoutMS: 3000,
 				useNewUrlParser: true,

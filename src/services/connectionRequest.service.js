@@ -7,8 +7,7 @@ const ConnectionRequest = require('../models/connectionRequest.model')
 module.exports.sendConnectionRequestService = async (req, res, next) => {
 	try {
 		const fromUserID = req.user._id
-		const toUserId = req.params.toUserId
-		const status = req.params.status
+		const { toUserId, status } = req.params
 
 		// Ensure the user is not sending a request to themselves
 		if (fromUserID.toString() === toUserId) {
@@ -16,6 +15,17 @@ module.exports.sendConnectionRequestService = async (req, res, next) => {
 				createHttpError(
 					400,
 					'You cannot send a connection request to yourself.',
+				),
+			)
+		}
+
+		const validStatuses = ['ignore', 'interested']
+
+		if (!validStatuses.includes(status)) {
+			return next(
+				createHttpError(
+					400,
+					'Invalid status provided. Valid statuses are "interested" or "ignore".',
 				),
 			)
 		}
@@ -38,7 +48,7 @@ module.exports.sendConnectionRequestService = async (req, res, next) => {
 				{ fromUserId: toUserId, toUserId: fromUserID },
 			],
 			// Ensure the request is between these two users exactly and exclude other statuses
-			status: { $in: ['pending', 'interested', 'accepted'] },
+			// status: { $in: ['pending', 'interested', 'accepted'] },
 		})
 
 		if (existingRequest) {
@@ -78,13 +88,13 @@ module.exports.reviewConnectionRequestService = async (req, res, next) => {
 		const loginUserId = req.user._id
 		const { requestId, status } = req.params
 
-		const validStatuses = ['interested', 'accepted']
+		const validStatuses = ['accepted', 'rejected']
 
 		if (!validStatuses.includes(status)) {
 			return next(
 				createHttpError(
 					400,
-					'Invalid status provided. Valid statuses are "interested" or "accepted".',
+					'Invalid status provided. Valid statuses are "rejected" or "accepted".',
 				),
 			)
 		}
