@@ -37,6 +37,8 @@ module.exports.sendConnectionRequestService = async (req, res, next) => {
 				{ fromUserId: fromUserID, toUserId: toUserId },
 				{ fromUserId: toUserId, toUserId: fromUserID },
 			],
+			// Ensure the request is between these two users exactly and exclude other statuses
+			status: { $in: ['pending', 'interested', 'accepted'] },
 		})
 
 		if (existingRequest) {
@@ -64,6 +66,54 @@ module.exports.sendConnectionRequestService = async (req, res, next) => {
 				message: 'Connection request sent successfully.',
 				status: 200,
 				data: connectionRequest,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}
+
+module.exports.reviewConnectionRequestService = async (req, res, next) => {
+	try {
+		const loginUserId = req.user._id
+		const { requestId, status } = req.params
+
+		const validStatuses = ['interested', 'accepted']
+
+		if (!validStatuses.includes(status)) {
+			return next(
+				createHttpError(
+					400,
+					'Invalid status provided. Valid statuses are "interested" or "accepted".',
+				),
+			)
+		}
+
+		const connectionRequest = await ConnectionRequest.findOne({
+			_id: requestId,
+			status: 'interested',
+			toUserId: loginUserId,
+		})
+
+		if (!connectionRequest) {
+			return next(
+				createHttpError(
+					404,
+					'Connection request not found or already reviewed.',
+				),
+			)
+		}
+
+		connectionRequest.status = status
+		const updatedConnectionRequest = await connectionRequest.save()
+
+		return res.status(200).json(
+			customResponse({
+				success: true,
+				error: false,
+				message: `Connection request successfully ${status}.`,
+				status: 200,
+				data: updatedConnectionRequest,
 			}),
 		)
 	} catch (error) {

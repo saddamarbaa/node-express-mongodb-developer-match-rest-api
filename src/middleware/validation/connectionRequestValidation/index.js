@@ -1,7 +1,11 @@
-const connectionRequestSchema = require('./connectionRequestSchema');
-const sendConnectionRequestValidation = require('./connectionRequestValidation');
+const sendConnectionRequestSchema = require('./connectionRequestSchema')
+const {
+	reviewConnectionRequestValidation,
+	sendConnectionRequestValidation,
+} = require('./connectionRequestValidation')
 
 module.exports = {
-  ...connectionRequestSchema,
-  ...sendConnectionRequestValidation,
+	...sendConnectionRequestSchema,
+	sendConnectionRequestValidation,
+	reviewConnectionRequestValidation,
 }
