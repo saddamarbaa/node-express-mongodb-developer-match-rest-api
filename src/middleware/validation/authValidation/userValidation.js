@@ -8,7 +8,12 @@ const loginUserValidation = (req, res, next) =>
   validator(userSchema.loginUser, req.body, next)
 
 
+ const updateUserValidation = (req, res, next) =>
+  validator(userSchema.updateUser, { ...req.file, ...req.body, ...req.params }, next);
+
+
 module.exports = {
   signupUserValidation,
-  loginUserValidation
+  loginUserValidation,
+  updateUserValidation
 }

@@ -139,7 +139,7 @@ module.exports.getAuthProfileService = async (req, res, next) => {
 	}
 }
 
-module.exports.logoutService = (req, res, next) => {
+module.exports.logoutService = async (req, res, next) => {
 	try {
 		const token =
 			req.cookies.authToken || req.headers['authorization']?.split(' ')[1]
@@ -163,6 +163,77 @@ module.exports.logoutService = (req, res, next) => {
 				message: 'Successfully logged out 😏 🍀',
 				status: 200,
 				data: null,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}
+
+module.exports.updateProfileService = async (req, res, next) => {
+	const { firstName, lastName, email, gender, bio, skills, profileUrl } =
+		req.body
+
+	try {
+		const user = await User.findById(req.params.userId)
+
+		if (!user) {
+			return next(new createHttpError.BadRequest())
+		}
+
+		if (!req.user?._id.equals(user._id)) {
+			return next(createHttpError(403, `Auth Failed (Unauthorized)`))
+		}
+
+		if (email) {
+			const existingUser = await User.findOne({
+				email: new RegExp(`^${email}$`, 'i'),
+			})
+			if (existingUser && !existingUser._id.equals(user._id)) {
+				return next(
+					createHttpError(
+						422,
+						`E-Mail address ${email} is already exists, please pick a different one.`,
+					),
+				)
+			}
+		}
+
+		user.firstName = firstName || user.firstName
+		user.lastName = lastName || user.lastName
+		user.email = email || user.email
+		user.gender = gender || user.gender
+		user.bio = bio || user.bio
+		user.skills = skills || user.skills
+		user.profileUrl = profileUrl || user.profileUrl
+
+		const updatedUser = await user.save({
+			validateBeforeSave: false,
+			new: true,
+		})
+
+		if (!updatedUser) {
+			return next(
+				createHttpError(
+					422,
+					`Failed to update user by given ID ${req.params.userId}`,
+				),
+			)
+		}
+
+		const {
+			password: pass,
+			confirmPassword,
+			...otherUserInfo
+		} = updatedUser._doc
+
+		return res.status(200).send(
+			customResponse({
+				success: true,
+				error: false,
+				message: `Successfully updated user by ID: ${req.params.userId}`,
+				status: 200,
+				data: { user: otherUserInfo },
 			}),
 		)
 	} catch (error) {

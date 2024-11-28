@@ -1,6 +1,9 @@
 const Joi = require('joi')
+const JoiObjectId = require('joi-objectid')
 
 const { GENDER_OPTIONS } = require('../../../constants/auth')
+
+const vaildObjectId = JoiObjectId(Joi)
 
 module.exports.userSchema = {
 	signupUser: Joi.object({
@@ -51,5 +54,15 @@ module.exports.userSchema = {
 	loginUser: Joi.object({
 		email: Joi.string().email().required(),
 		password: Joi.string().min(6).required(),
+	}),
+	updateUser: Joi.object({
+		userId: vaildObjectId().required(),
+		email: Joi.string().email(),
+		firstName: Joi.string().min(3).max(15),
+		lastName: Joi.string().min(3).max(15),
+		gender: Joi.string(),
+		bio: Joi.string().min(10).max(300),
+		skills: Joi.array().items(Joi.string()).default([]).optional(),
+		profileUrl: Joi.string().uri().optional(),
 	}),
 }

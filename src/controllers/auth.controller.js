@@ -3,6 +3,7 @@ const {
 	loginService,
 	getAuthProfileService,
 	logoutService,
+	updateProfileService,
 } = require('../services/auth.service')
 
 module.exports.signupController = (req, res, next) =>
@@ -16,3 +17,6 @@ module.exports.logoutController = (req, res, next) =>
 
 module.exports.getAuthProfileController = (req, res, next) =>
 	getAuthProfileService(req, res, next)
+
+
+module.exports.updateProfileController =(req, res, next) =>updateProfileService(req,res,next)

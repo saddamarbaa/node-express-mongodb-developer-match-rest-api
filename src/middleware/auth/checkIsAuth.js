@@ -13,7 +13,6 @@ module.exports = async function checkIsAuth(req, res, next) {
 		req?.cookies?.accessToken ||
 		''
 
-	console.log(req?.cookies)
 	if (!token) {
 		return next(createHttpError(401, 'Auth Failed (Invalid Credentials)'))
 	}
