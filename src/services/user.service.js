@@ -1,4 +1,5 @@
 const ConnectionRequest = require('../models/connectionRequest.model')
+const User = require('../models/User.model')
 const { customResponse } = require('../utils')
 
 module.exports.getUserPendingRequestsService = async (req, res, next) => {
@@ -15,12 +16,14 @@ module.exports.getUserPendingRequestsService = async (req, res, next) => {
 				? 'No pending connection requests found.'
 				: 'Pending connection requests retrieved successfully.'
 
-		return res.status(200).json(
+		const statusCode = 200
+
+		return res.status(statusCode).json(
 			customResponse({
 				success: true,
 				error: false,
 				message: message,
-				status: 200,
+				status: statusCode,
 				data: connectionRequests,
 			}),
 		)
@@ -43,7 +46,15 @@ module.exports.getUserMatchConnectionsService = async (req, res, next) => {
 			.populate('fromUserId', 'firstName lastName profileUrl') // Populate sender's info
 			.populate('toUserId', 'firstName lastName profileUrl') // Populate receiver's info
 
-			.populate('fromUserId', 'firstName lastName profileUrl')
+		// Extract user data from the connections
+		const matchedUsers = userConnections.map((connection) => {
+			// Return the user who is not the logged-in user
+			if (connection.fromUserId._id.toString() === loginUserId.toString()) {
+				return connection.toUserId
+			} else {
+				return connection.fromUserId
+			}
+		})
 
 		const message =
 			userConnections.length === 0
@@ -56,7 +67,103 @@ module.exports.getUserMatchConnectionsService = async (req, res, next) => {
 				error: false,
 				message: message,
 				status: userConnections.length === 0 ? 204 : 200,
-				data: userConnections,
+				data: matchedUsers,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}
+
+module.exports.getUserFeedService = async (req, res, next) => {
+	try {
+		const currentUserId = req.user._id
+
+		// Get pagination params from query, default values
+		let page = Number(req.query.page) || 1
+		let limit = Number(req.query.limit) || 20
+
+		// Ensure limit does not exceed 100
+		if (limit > 100) {
+			limit = 100
+		}
+
+		const startIndex = (page - 1) * limit
+		const endIndex = page * limit
+
+		// Step 1: Fetch all connection requests involving the current user (either as sender or receiver)
+		const userConnections = await ConnectionRequest.find({
+			$or: [{ fromUserId: currentUserId }, { toUserId: currentUserId }],
+		}).select('fromUserId toUserId status')
+
+		// Step 2: Collect IDs of users to be excluded from the feed
+		const excludedUserIds = new Set()
+		excludedUserIds.add(currentUserId.toString()) // Exclude current user's own profile
+
+		// Add users from connections and requests (accepted, ignored, pending)
+		userConnections.forEach((connection) => {
+			if (['accepted', 'ignored', 'pending'].includes(connection.status)) {
+				excludedUserIds.add(connection.fromUserId.toString())
+				excludedUserIds.add(connection.toUserId.toString())
+			}
+		})
+
+		// Step 3: Query to find users that are NOT in the excludedUserIds set, applying pagination
+		const totalUsersCount = await User.countDocuments({
+			// Exclude users from the feed based on the excludedUserIds
+			_id: { $nin: Array.from(excludedUserIds) },
+		})
+
+		// Handle if requested page doesn't exist
+		if (page > Math.ceil(totalUsersCount / limit)) {
+			return res.status(400).json(
+				customResponse({
+					success: false,
+					error: true,
+					message: `Page ${page} does not exist. Total pages: ${Math.ceil(
+						totalUsersCount / limit,
+					)}.`,
+					status: 400,
+					data: null,
+				}),
+			)
+		}
+
+		const usersToShow = await User.find({
+			_id: { $nin: Array.from(excludedUserIds) },
+		})
+			.select('firstName lastName profileUrl')
+			.limit(limit)
+			.skip(startIndex)
+
+		// Pagination response details
+		const pagination = {
+			currentPage: page,
+			limit: limit,
+			totalDocs: totalUsersCount,
+			totalPages: Math.ceil(totalUsersCount / limit),
+			nextPage: endIndex < totalUsersCount ? page + 1 : null,
+			prevPage: startIndex > 0 ? page - 1 : null,
+			lastPage: Math.ceil(totalUsersCount / limit),
+		}
+
+		const message =
+			usersToShow.length === 0
+				? 'No users found for your feed.'
+				: 'User feed loaded successfully.'
+
+		const data = {
+			users: usersToShow,
+			pagination: pagination,
+		}
+
+		return res.status(200).json(
+			customResponse({
+				success: true,
+				error: false,
+				message: message,
+				status: 200,
+				data: data,
 			}),
 		)
 	} catch (error) {
