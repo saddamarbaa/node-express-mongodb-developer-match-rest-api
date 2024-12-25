@@ -7,6 +7,7 @@ const User = require('../../models/User.model')
 module.exports = async function checkIsAuth(req, res, next) {
 	const authHeader =
 		(req && req.headers.authorization) || (req && req.headers.Authorization)
+
 	const token =
 		(authHeader && authHeader.split(' ')[1]) ||
 		req?.cookies?.authToken ||

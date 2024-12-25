@@ -83,7 +83,7 @@ module.exports.loginService = async (req, res, next) => {
 		const data = {
 			user: {
 				authToken: generatedToken,
-				// user: otherUserInfo,,
+				user: otherUserInfo,
 			},
 		}
 
