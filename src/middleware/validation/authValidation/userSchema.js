@@ -14,7 +14,7 @@ module.exports.userSchema = {
 			'string.max': 'First name must not exceed 15 characters',
 			'any.required': 'First name is required',
 		}),
-		lastName: Joi.string().min(3).max(15).required().messages({
+		lastName: Joi.string().min(3).max(15).messages({
 			'string.base': 'Last name must be a string',
 			'string.empty': 'Last name is required',
 			'string.min': 'Last name must be at least 3 characters long',

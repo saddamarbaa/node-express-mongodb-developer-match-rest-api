@@ -1,6 +1,5 @@
-
-const CONNECTION_STATUSES = ['ignore', 'interested', 'accepted', 'rejected'];
+const CONNECTION_STATUSES = ['ignore', 'interested', 'accepted', 'rejected']
 
 module.exports = {
-  CONNECTION_STATUSES,
-};
+	CONNECTION_STATUSES,
+}
