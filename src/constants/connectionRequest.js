@@ -1,4 +1,4 @@
-const CONNECTION_STATUSES = ['ignore', 'interested', 'accepted', 'rejected']
+const CONNECTION_STATUSES = ['ignored', 'interested', 'accepted', 'rejected']
 
 module.exports = {
 	CONNECTION_STATUSES,
