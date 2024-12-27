@@ -41,7 +41,7 @@ module.exports.signupService = async (req, res, next) => {
 			}),
 		)
 	} catch (error) {
-		return next(createHttpError.InternalServerError)
+		return next(error)
 	}
 }
 

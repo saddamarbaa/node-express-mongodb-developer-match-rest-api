@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 			lowercase: true,
-			required: [true, 'Please provide surname'],
+			required: [false, 'Please provide surname'],
 			minLength: [3, "Surname can't be smaller than 3 characters"],
 			maxLength: [15, "Surname can't be greater than 15 characters"],
 		},

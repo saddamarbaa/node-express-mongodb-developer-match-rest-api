@@ -61,12 +61,12 @@ module.exports.getUserMatchConnectionsService = async (req, res, next) => {
 				? 'No connections found.'
 				: 'User connections retrieved successfully.'
 
-		return res.status(userConnections.length === 0 ? 204 : 200).json(
+		return res.status(200).json(
 			customResponse({
 				success: true,
 				error: false,
 				message: message,
-				status: userConnections.length === 0 ? 204 : 200,
+				status: 200,
 				data: matchedUsers,
 			}),
 		)
@@ -115,7 +115,7 @@ module.exports.getUserFeedService = async (req, res, next) => {
 		})
 
 		// Handle if requested page doesn't exist
-		if (page > Math.ceil(totalUsersCount / limit)) {
+		if (page > 1 && page > Math.ceil(totalUsersCount / limit)) {
 			return res.status(400).json(
 				customResponse({
 					success: false,

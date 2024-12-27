@@ -19,7 +19,7 @@ module.exports.sendConnectionRequestService = async (req, res, next) => {
 			)
 		}
 
-		const validStatuses = ['ignore', 'interested']
+		const validStatuses = ['ignored', 'interested']
 
 		if (!validStatuses.includes(status)) {
 			return next(
