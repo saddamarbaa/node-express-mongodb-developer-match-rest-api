@@ -12,6 +12,7 @@ const {
 	updateUserValidation,
 } = require('../middleware/validation/authValidation')
 const { checkIsAuth } = require('../middleware')
+const { deleteUserController } = require('../controllers/user.controller')
 
 const router = express.Router()
 
@@ -24,6 +25,8 @@ router.patch(
 	updateUserValidation,
 	updateProfileController,
 )
+
+router.delete('/delete/:userId', checkIsAuth, deleteUserController)
 router.get('/me', checkIsAuth, getAuthProfileController)
 
 module.exports = router
