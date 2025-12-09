@@ -170,3 +170,29 @@ module.exports.getUserFeedService = async (req, res, next) => {
 		return next(error)
 	}
 }
+
+module.exports.deleteUserService = async (req, res, next) => {
+	try {
+		const userId = req.user._id
+
+		// Remove connection requests where the user is either the sender or receiver
+		await ConnectionRequest.deleteMany({
+			$or: [{ fromUserId: userId }, { toUserId: userId }],
+		})
+
+		// Delete the user
+		await User.findByIdAndDelete(userId)
+
+		return res.status(200).json(
+			customResponse({
+				success: true,
+				error: false,
+				message: 'User profile deleted successfully.',
+				status: 200,
+				data: null,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}
