@@ -132,7 +132,7 @@ module.exports.getUserFeedService = async (req, res, next) => {
 		const usersToShow = await User.find({
 			_id: { $nin: Array.from(excludedUserIds) },
 		})
-			.select('firstName lastName profileUrl')
+			.select('skills profileUrl username email isEmailVerified')
 			.limit(limit)
 			.skip(startIndex)
 
