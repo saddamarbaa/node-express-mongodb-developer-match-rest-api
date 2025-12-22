@@ -182,6 +182,42 @@ module.exports.getUserFeedService = async (req, res, next) => {
 	}
 }
 
+module.exports.getUserRejectedConnectionsService = async (req, res, next) => {
+	try {
+		const loginUserId = req.user._id
+
+		// Find rejected (ignored) connection requests by the logged-in user
+		const rejectedConnections = await ConnectionRequest.find({
+			fromUserId: loginUserId,
+			status: 'ignored',
+		}).populate(
+			'toUserId',
+			'skills profileUrl username email isEmailVerified firstName lastName bio gender createdAt updatedAt',
+		)
+
+		const rejectedUsers = rejectedConnections.map(
+			(connection) => connection.toUserId,
+		)
+
+		const message =
+			rejectedUsers.length === 0
+				? 'No rejected users found.'
+				: 'Rejected users retrieved successfully.'
+
+		return res.status(200).json(
+			customResponse({
+				success: true,
+				error: false,
+				message,
+				status: 200,
+				data: rejectedUsers,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}
+
 module.exports.deleteUserService = async (req, res, next) => {
 	try {
 		const userId = req.user._id
