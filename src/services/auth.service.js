@@ -4,8 +4,16 @@ const { customResponse, generateJwtToken } = require('../utils')
 const { environmentConfig } = require('../config')
 
 module.exports.signupService = async (req, res, next) => {
-	const { email, password, firstName, lastName, confirmPassword, gender } =
-		req.body
+	const {
+		email,
+		password,
+		firstName,
+		lastName,
+		confirmPassword,
+		gender,
+		skills,
+		bio,
+	} = req.body
 
 	try {
 		const isEmailExit = await User.findOne({
@@ -28,6 +36,8 @@ module.exports.signupService = async (req, res, next) => {
 			password,
 			confirmPassword,
 			gender,
+			skills: skills ? skills : [],
+			...User(bio && { bio: bio }),
 		})
 
 		const user = await newUser.save()

@@ -9,7 +9,10 @@ module.exports.getUserPendingRequestsService = async (req, res, next) => {
 		const connectionRequests = await ConnectionRequest.find({
 			toUserId: loginUserId,
 			status: 'interested',
-		}).populate('fromUserId', 'firstName lastName profileUrl')
+		}).populate(
+			'fromUserId',
+			'skills profileUrl username email isEmailVerified firstName lastName bio gender 	createdAt 	updatedAt ',
+		)
 
 		const message =
 			connectionRequests.length === 0
@@ -43,8 +46,14 @@ module.exports.getUserMatchConnectionsService = async (req, res, next) => {
 				{ toUserId: loginUserId, status: 'accepted' },
 			],
 		})
-			.populate('fromUserId', 'firstName lastName profileUrl') // Populate sender's info
-			.populate('toUserId', 'firstName lastName profileUrl') // Populate receiver's info
+			.populate(
+				'fromUserId',
+				'skills profileUrl username email isEmailVerified firstName lastName bio gender 	createdAt 	updatedAt ',
+			) // Populate sender's info
+			.populate(
+				'toUserId',
+				'skills profileUrl username email isEmailVerified firstName lastName bio gender 	createdAt 	updatedAt ',
+			) // Populate receiver's info
 
 		// Extract user data from the connections
 		const matchedUsers = userConnections.map((connection) => {
@@ -132,7 +141,9 @@ module.exports.getUserFeedService = async (req, res, next) => {
 		const usersToShow = await User.find({
 			_id: { $nin: Array.from(excludedUserIds) },
 		})
-			.select('skills profileUrl username email isEmailVerified')
+			.select(
+				'skills profileUrl username email isEmailVerified firstName lastName bio gender 	createdAt 	updatedAt ',
+			)
 			.limit(limit)
 			.skip(startIndex)
 
@@ -164,6 +175,42 @@ module.exports.getUserFeedService = async (req, res, next) => {
 				message: message,
 				status: 200,
 				data: data,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}
+
+module.exports.getUserRejectedConnectionsService = async (req, res, next) => {
+	try {
+		const loginUserId = req.user._id
+
+		// Find rejected (ignored) connection requests by the logged-in user
+		const rejectedConnections = await ConnectionRequest.find({
+			fromUserId: loginUserId,
+			status: 'ignored',
+		}).populate(
+			'toUserId',
+			'skills profileUrl username email isEmailVerified firstName lastName bio gender createdAt updatedAt',
+		)
+
+		const rejectedUsers = rejectedConnections.map(
+			(connection) => connection.toUserId,
+		)
+
+		const message =
+			rejectedUsers.length === 0
+				? 'No rejected users found.'
+				: 'Rejected users retrieved successfully.'
+
+		return res.status(200).json(
+			customResponse({
+				success: true,
+				error: false,
+				message,
+				status: 200,
+				data: rejectedUsers,
 			}),
 		)
 	} catch (error) {

@@ -6,11 +6,11 @@ const ConnectionRequest = require('../models/connectionRequest.model')
 
 module.exports.sendConnectionRequestService = async (req, res, next) => {
 	try {
-		const fromUserID = req.user._id
+		const loginUserId = req.user._id
 		const { toUserId, status } = req.params
 
-		// Ensure the user is not sending a request to themselves
-		if (fromUserID.toString() === toUserId) {
+		// Prevent self-request
+		if (loginUserId.toString() === toUserId) {
 			return next(
 				createHttpError(
 					400,
@@ -19,18 +19,15 @@ module.exports.sendConnectionRequestService = async (req, res, next) => {
 			)
 		}
 
+		// Validate status
 		const validStatuses = ['ignored', 'interested']
-
 		if (!validStatuses.includes(status)) {
 			return next(
-				createHttpError(
-					400,
-					'Invalid status provided. Valid statuses are "interested" or "ignore".',
-				),
+				createHttpError(400, 'Invalid status. Use "interested" or "ignored".'),
 			)
 		}
 
-		// Check if the `toUserId` exists in the database
+		// Check recipient exists
 		const recipientUser = await User.findById(toUserId)
 		if (!recipientUser) {
 			return next(
@@ -41,40 +38,46 @@ module.exports.sendConnectionRequestService = async (req, res, next) => {
 			)
 		}
 
-		// Check if there's already a connection request between `fromUserId` and `toUserId`
+		// Check existing connection (either direction)
 		const existingRequest = await ConnectionRequest.findOne({
 			$or: [
-				{ fromUserId: fromUserID, toUserId: toUserId },
-				{ fromUserId: toUserId, toUserId: fromUserID },
+				{ fromUserId: loginUserId, toUserId },
+				{ fromUserId: toUserId, toUserId: loginUserId },
 			],
-			// Ensure the request is between these two users exactly and exclude other statuses
-			// status: { $in: ['pending', 'interested', 'accepted'] },
 		})
 
+		// If exists → update (allows retry after ignore)
 		if (existingRequest) {
-			return next(
-				createHttpError(
-					400,
-					'A connection request between these users already exists.',
-				),
+			existingRequest.fromUserId = loginUserId
+			existingRequest.toUserId = toUserId
+			existingRequest.status = status
+
+			await existingRequest.save()
+
+			return res.status(200).json(
+				customResponse({
+					success: true,
+					error: false,
+					message: 'Connection request updated successfully.',
+					status: 200,
+					data: existingRequest,
+				}),
 			)
 		}
 
-		// Create a new connection request
-		const newConnectionRequest = new ConnectionRequest({
-			fromUserId: fromUserID,
-			toUserId: toUserId,
-			status: status,
+		// Create new request
+		const connectionRequest = await ConnectionRequest.create({
+			fromUserId: loginUserId,
+			toUserId,
+			status,
 		})
 
-		const connectionRequest = await newConnectionRequest.save()
-
-		return res.status(200).json(
+		return res.status(201).json(
 			customResponse({
 				success: true,
 				error: false,
 				message: 'Connection request sent successfully.',
-				status: 200,
+				status: 201,
 				data: connectionRequest,
 			}),
 		)
