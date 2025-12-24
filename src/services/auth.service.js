@@ -1,4 +1,5 @@
 const createHttpError = require('http-errors')
+const crypto = require('crypto')
 const User = require('../models/User.model')
 const { customResponse, generateJwtToken } = require('../utils')
 const { environmentConfig } = require('../config')
@@ -248,5 +249,115 @@ module.exports.updateProfileService = async (req, res, next) => {
 		)
 	} catch (error) {
 		return next(error)
+	}
+}
+
+module.exports.forgotPasswordService = async (req, res, next) => {
+	const { email } = req.body
+	try {
+		const user = await User.findOne({ email: new RegExp(`^${email}$`, 'i') })
+
+		if (!user) {
+			const message = `The email address ${email} is not associated with any account. Double-check your email address and try again.`
+			return next(createHttpError(401, message))
+		}
+
+		// Generate reset token
+		const resetToken = crypto.randomBytes(20).toString('hex')
+		const resetPasswordToken = crypto
+			.createHash('sha256')
+			.update(resetToken)
+			.digest('hex')
+		const resetPasswordExpire = Date.now() + 30 * 60 * 1000 // 30 minutes
+
+		// Save the hashed token and expiry to the user
+		user.resetPasswordToken = resetPasswordToken
+		user.resetPasswordExpire = resetPasswordExpire
+		await user.save({ validateBeforeSave: false })
+
+		const WEBSITE_URL = environmentConfig.CLIENT_URL
+
+		const passwordResetEmailLink = `${WEBSITE_URL}/auth?id=${user._id}&token=${resetPasswordToken}`
+
+		// Email message
+		const message = `You are receiving this email because you (or someone else) have requested the reset of the password for your account.\n\n
+      Please click on the following link, or paste this into your browser to complete the process:\n\n
+      ${passwordResetEmailLink}\n\n
+      If you did not request this, please ignore this email and your password will remain unchanged.\n`
+
+		// Send email
+		// TODO
+		// await sendEmail({
+		// 	to: user.email,
+		// 	subject: 'Password Reset Request',
+		// 	text: message,
+		// })
+
+		// Response data
+		const data = {
+			user: {
+				resetPasswordToken: passwordResetEmailLink,
+			},
+		}
+
+		return res.status(200).json(
+			customResponse({
+				success: true,
+				error: false,
+				message: `An email has been sent to ${user.email} with further instructions.`,
+				status: 200,
+				data,
+			}),
+		)
+	} catch (error) {
+		return next(error)
+	}
+}
+
+module.exports.resetPasswordService = async (req, res, next) => {
+	const { password, confirmPassword } = req.body
+
+	const token = req.params.token
+	const userId = req.params.userId
+
+	try {
+		// Hash the token from the request to compare with the stored hashed token
+		const resetPasswordToken = crypto
+			.createHash('sha256')
+			.update(token)
+			.digest('hex')
+
+		const user = await User.findOne({
+			resetPasswordToken,
+			resetPasswordExpire: { $gt: Date.now() }, // Check if the token is not expired
+		})
+
+		if (!user) {
+			return next(
+				createHttpError(400, 'Invalid or expired password reset token'),
+			)
+		}
+
+		// Update the user's password and clear the reset token and expiry
+		user.password = password
+		user.confirmPassword = confirmPassword
+		user.resetPasswordToken = undefined
+		user.resetPasswordExpire = undefined
+
+		await user.save() // We want validation for password and confirmPassword
+
+		// Optionally, send an email notifying the user that the password has been reset
+
+		return res.status(200).send(
+			customResponse({
+				success: true,
+				error: false,
+				message: `Your password has been Password Reset Successfully updated please login`,
+				status: 200,
+				data: null,
+			}),
+		)
+	} catch (error) {
+		return next(InternalServerError)
 	}
 }

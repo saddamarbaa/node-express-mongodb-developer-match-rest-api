@@ -5,11 +5,15 @@ const {
 	getAuthProfileController,
 	logoutController,
 	updateProfileController,
+	forgotPasswordController,
+	resetPasswordController,
 } = require('../controllers/auth.controller')
 const {
 	signupUserValidation,
 	loginUserValidation,
 	updateUserValidation,
+	forgotUserPasswordValidation,
+	resetPasswordValidation,
 } = require('../middleware/validation/authValidation')
 const { checkIsAuth } = require('../middleware')
 const { deleteUserController } = require('../controllers/user.controller')
@@ -28,5 +32,16 @@ router.patch(
 
 router.delete('/delete/:userId', checkIsAuth, deleteUserController)
 router.get('/me', checkIsAuth, getAuthProfileController)
+router.post(
+	'/forget-password',
+	forgotUserPasswordValidation,
+	forgotPasswordController,
+)
+
+router.post(
+	'/reset-password/:userId/:token',
+	resetPasswordValidation,
+	resetPasswordController,
+)
 
 module.exports = router

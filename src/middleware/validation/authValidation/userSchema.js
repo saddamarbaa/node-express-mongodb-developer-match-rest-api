@@ -65,4 +65,13 @@ module.exports.userSchema = {
 		skills: Joi.array().items(Joi.string()).default([]).optional(),
 		profileUrl: Joi.string().uri().optional(),
 	}),
+	forgotUserPassword: Joi.object({
+		email: Joi.string().email().required(),
+	}),
+	resetPassword: Joi.object({
+		token: Joi.string().min(3).max(300).required(),
+		userId: vaildObjectId().required(),
+		password: Joi.string().min(6).required(),
+		confirmPassword: Joi.string().required().valid(Joi.ref('password')),
+	}),
 }
