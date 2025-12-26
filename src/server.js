@@ -1,33 +1,38 @@
 const app = require('./app')
 const { environmentConfig } = require('./config')
 const { connectDB } = require('./config/db.config')
+const http = require('http')
+const { initSocket } = require('./socket')
 
 const PORT = process.env.PORT || 5001
 
-// Connecting to MongoDB and Starting Server
+// Create HTTP server
+const server = http.createServer(app)
+
+// Init socket
+initSocket(server)
+
+// Start server
 const startServer = async () => {
 	try {
-		// env setup
 		const env = process.env.NODE_ENV
-		const conn = await connectDB(
+
+		await connectDB(
 			env === 'testing'
 				? environmentConfig.TEST_ENV_MONGODB_CONNECTION_STRING
 				: environmentConfig.MONGODB_CONNECTION_STRING,
 		)
 
-		console.log(`MongoDB database connection established successfully`)
+		console.log('MongoDB connected')
 
-		app?.listen(PORT, () => {
-			console.log(`Server is listening on port: http://localhost:${PORT} ....`)
+		server.listen(PORT, () => {
+			console.log(`🚀 Server running at http://localhost:${PORT}`)
 		})
 	} catch (error) {
-		console.log(
-			'MongoDB connection error. Please make sure MongoDB is running: ',
-		)
+		console.error('Startup error:', error)
 	}
 }
 
-// Establish http server connection
 startServer()
 
 module.exports = app
